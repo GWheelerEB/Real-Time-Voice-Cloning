@@ -374,7 +374,7 @@ class WaveRNN(nn.Module):
         total_len = num_folds * (target + overlap) + overlap
 
         # Need some silence for the rnn warmup
-        silence_len = overlap // 2
+        silence_len = int((overlap // 2)*1.5)
         fade_len = overlap - silence_len
         silence = np.zeros((silence_len), dtype=np.float64)
 
@@ -427,7 +427,7 @@ class WaveRNN(nn.Module):
             "optimizer_state": optimizer.state_dict(),
         }, path)
 
-    def num_params(self, print_out=True):
+    def num_params(self, print_out=False):
         parameters = filter(lambda p: p.requires_grad, self.parameters())
         parameters = sum([np.prod(p.size()) for p in parameters]) / 1_000_000
         if print_out :
