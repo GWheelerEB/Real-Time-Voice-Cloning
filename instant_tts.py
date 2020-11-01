@@ -16,7 +16,24 @@ import os
 import re
 from timeit import default_timer as timer
 
+import sys
+import contextlib
+import io
+
 import sounddevice as sd
+
+class DummyFile(object):
+    def write(self, x): pass
+
+@contextlib.contextmanager
+def nostdout():
+    save_stdout = sys.stdout
+    save_stderr = sys.stderr
+    sys.stdout = DummyFile()
+    sys.stderr = DummyFile()
+    yield
+    sys.stdout = save_stdout
+    sys.stderr = save_stderr
 
 from voices_dict import voices_dict
 Lorem_Ipsum="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
@@ -71,16 +88,19 @@ def text_to_speech(text:str,play_sound:bool=True):
     texts = [text]
     embeds = [embed]
     print("Creating the MEL spectrogram")
-    specs = synthesizer.synthesize_spectrograms(texts, embeds)
-    spec = specs[0]
+    with nostdout():
+        specs = synthesizer.synthesize_spectrograms(texts, embeds)
+        spec = specs[0]
 
     print("Generating audio")
-    generated_wav = vocoder.infer_waveform(spec)
-    generated_wav = np.pad(generated_wav, (0, synthesizer.sample_rate))
 
-    # Trim excess silences to compensate for gaps in spectrograms (issue #53)
-    generated_wav = encoder.preprocess_wav(generated_wav)
-
+    with nostdout():
+        generated_wav = vocoder.infer_waveform(spec)
+        generated_wav = np.pad(generated_wav, (0, synthesizer.sample_rate))
+        
+        # Trim excess silences to compensate for gaps in spectrograms (issue #53)
+        generated_wav = encoder.preprocess_wav(generated_wav)
+        
     filename = f'tts_generated{filenum}.wav'
     sf.write(filename, generated_wav.astype(np.float32), synthesizer.sample_rate)
 
@@ -129,15 +149,16 @@ def change_mode(character:str="Human_Man",tone:str="neutral"):
             tone = "neutral"
         
         print(f'Reference sound has changed; now loading {character}:{tone}...')
-        in_fpath = local_infpath
+        with nostdout():
+            in_fpath = local_infpath
         
-        preprocessed_wav = encoder.preprocess_wav(in_fpath)
-        original_wav, sampling_rate = librosa.load(str(in_fpath))
-        preprocessed_wav = encoder.preprocess_wav(original_wav, sampling_rate)
+            preprocessed_wav = encoder.preprocess_wav(in_fpath)
+            original_wav, sampling_rate = librosa.load(str(in_fpath))
+            preprocessed_wav = encoder.preprocess_wav(original_wav, sampling_rate)
 
-        embed = encoder.embed_utterance(preprocessed_wav)
-        torch.manual_seed(seed)
-        vocoder.load_model(vocoder_path)
-        text_to_speech('Tea.',play_sound=False)
+            embed = encoder.embed_utterance(preprocessed_wav)
+            torch.manual_seed(seed)
+            vocoder.load_model(vocoder_path)
+            text_to_speech('Tea.',play_sound=False)
     else:
         print('Mode is already correct. No need to change.')

@@ -1,6 +1,7 @@
 import tensorflow as tf
 import torch
 
+tf.logging.set_verbosity(tf.logging.FATAL)
 
 class HighwayNet:
     def __init__(self, units, name=None):
