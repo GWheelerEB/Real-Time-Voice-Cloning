@@ -5,8 +5,9 @@ import torch
 
 _model = None   # type: WaveRNN
 
-def load_model(weights_fpath, verbose=True):
+def load_model(weights_fpath, verbose=False):
     global _model, _device
+    
     
     if verbose:
         print("Building Wave-RNN")
@@ -37,12 +38,13 @@ def load_model(weights_fpath, verbose=True):
     _model.load_state_dict(checkpoint['model_state'])
     _model.eval()
 
+    print(type(_model))
 
 def is_loaded():
     return _model is not None
 
 
-def infer_waveform(mel, normalize=True,  batched=True, target=8000, overlap=800, 
+def infer_waveform(mel, normalize=True,  batched=True, target=2000, overlap=50, 
                    progress_callback=None):
     """
     Infers the waveform of a mel spectrogram output by the synthesizer (the format must match 
