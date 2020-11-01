@@ -1,0 +1,12 @@
+version: "3.7"
+services:
+  voice_clone:
+    build:
+      context: .
+      cache_from:
+      - dnd/voice-clone:latest
+    image: dnd/voice-clone:latest
+    volumes:
+      - "/data:/home/gwheelereb/data"
+    environment:
+      TMP_DIR: /mnt/q/Docker/TEMP
